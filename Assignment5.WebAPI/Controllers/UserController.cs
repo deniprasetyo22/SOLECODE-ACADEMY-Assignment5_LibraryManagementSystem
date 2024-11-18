@@ -14,151 +14,101 @@ namespace Assignment5.WebAPI.Controllers
     public class UserController : ControllerBase
     {
         private readonly IUserService _userService;
+
         public UserController(IUserService userService)
         {
             _userService = userService;
         }
 
-        /// <summary>
-        /// Adds a new user to the system.
-        /// </summary>
-        /// <remarks>
-        /// Ensure that the user data is not null and that all required fields are provided.
-        ///
-        /// Sample request:
-        ///
-        ///     POST /api/User
-        ///     {
-        ///        "firstName": "Deni",
-        ///        "lastName": "Prasetyo",
-        ///        "position": "Library Manager",
-        ///        "privilage": "Can Add User",
-        ///        "libraryCardNumber": "L-11111",
-        ///        "notes":"admin"
-        ///     }
-        /// </remarks>
-        /// <param name="user">The user to be added.</param>
-        /// <returns>Success message if the user is added successfully, or an error message if validation fails.</returns>
         [HttpPost]
         [MapToApiVersion("1.0")]
         public async Task<ActionResult<User>> AddUser([FromBody] User user)
         {
-            if (user == null)
+            try
             {
-                return BadRequest("Invalid input data. Please check the user data.");
+                var addedUser = await _userService.AddUser(user);
+                return Ok("User Added Successfully.");
             }
-
-            await _userService.AddUser(user);
-            return Ok("User added successfully.");
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
-        /// <summary>
-        /// Retrieves a list of all users in the system.
-        /// </summary>
-        /// <remarks>
-        /// This endpoint retrieves all user records available in the system.
-        ///
-        /// Sample request:
-        ///
-        ///     GET /api/User
-        /// </remarks>
-        /// <returns>A list of users.</returns>
         [HttpGet]
         [MapToApiVersion("1.0")]
         public async Task<ActionResult<IEnumerable<User>>> GetAllUsers([FromQuery] paginationDto pagination)
         {
-            var users = await _userService.GetAllUsers(pagination);
-            return Ok(users);
+            try
+            {
+                var users = await _userService.GetAllUsers(pagination);
+                return Ok(users);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
-        /// <summary>
-        /// Retrieves a user by its ID.
-        /// </summary>
-        /// <remarks>
-        /// Ensure that the provided user ID is valid (greater than zero).
-        ///
-        /// Sample request:
-        ///
-        ///     GET /api/User/1
-        /// </remarks>
-        /// <param name="userId">The ID of the user to be retrieved.</param>
-        /// <returns>User details if found, otherwise an error message.</returns>
+        [HttpGet("noPages")]
+        [MapToApiVersion("1.0")]
+        public async Task<IActionResult> GetAllUsersNoPages()
+        {
+            try
+            {
+                var users = await _userService.GetAllUsersNoPages();
+                return Ok(users);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
         [HttpGet("{userId}")]
         [MapToApiVersion("1.0")]
         public async Task<ActionResult<User>> GetUserById(int userId)
         {
-            if (userId <= 0)
+            try
             {
-                return BadRequest("Invalid ID. The ID must be greater than zero.");
+                var user = await _userService.GetUserById(userId);
+                return Ok(user);
             }
-            var user = await _userService.GetUserById(userId);
-            if (user == null)
+            catch (Exception ex)
             {
-                return NotFound($"User with ID {userId} not found.");
+                return BadRequest(ex.Message);
             }
-            return Ok(user);
         }
 
-        /// <summary>
-        /// Updates an existing user record.
-        /// </summary>
-        /// <remarks>
-        /// Ensure that the user ID is valid and that the user data is not null.
-        ///
-        /// Sample request:
-        ///
-        ///     PUT /api/User/1
-        ///     {
-        ///        "firstName": "Deni",
-        ///        "lastName": "Prasetyo",
-        ///        "position": "Library Manager",
-        ///        "privilage": "Can Add User",
-        ///        "libraryCardNumber": "L-11111",
-        ///        "notes":"admin"
-        ///     }
-        /// </remarks>
-        /// <param name="userId">The ID of the user to be updated.</param>
-        /// <param name="user">The updated user data.</param>
-        /// <returns>Success message if the user is updated successfully, or an error message if validation fails.</returns>
         [HttpPut("{userId}")]
         [MapToApiVersion("1.0")]
         public async Task<IActionResult> UpdateUser(int userId, [FromBody] User user)
         {
-            if (user == null)
+            try
             {
-                return BadRequest("Invalid input data. Please check the user data.");
+                await _userService.UpdateUser(userId, user);
+                return Ok("User updated successfully.");
             }
-            var success = await _userService.UpdateUser(userId, user);
-            if (!success)
+            catch (Exception ex)
             {
-                return NotFound("User not found.");
+                return BadRequest(ex.Message);
             }
-            return Ok("User updated successfully.");
         }
 
-        /// <summary>
-        /// Deletes a user by its ID.
-        /// </summary>
-        /// <remarks>
-        /// Ensure that the provided user ID is valid.
-        ///
-        /// Sample request:
-        ///
-        ///     DELETE /api/User/1
-        /// </remarks>
-        /// <param name="userId">The ID of the user to be deleted.</param>
-        /// <returns>Success message if the user is deleted successfully, or an error message if the user is not found.</returns>
         [HttpDelete("{userId}")]
         [MapToApiVersion("1.0")]
         public async Task<IActionResult> DeleteUser(int userId)
         {
-            var success = await _userService.DeleteUser(userId);
-            if (!success)
+            try
             {
-                return NotFound("User not found.");
+                var success = await _userService.DeleteUser(userId);
+                return Ok("User deleted successfully.");
             }
-
-            return Ok("User deleted successfully.");
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
     }
+
 }

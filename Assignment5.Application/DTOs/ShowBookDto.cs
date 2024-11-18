@@ -16,6 +16,7 @@ namespace Assignment5.Application.DTOs
         public string? publisher { get; set; }
         public string? description { get; set; }
         public string? location { get; set; }
+        public double? price { get; set; }
         public int? totalBook { get; set; }
         public string? language { get; set; }
     }

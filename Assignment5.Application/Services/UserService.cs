@@ -10,9 +10,10 @@ using System.Threading.Tasks;
 
 namespace Assignment5.Application.Services
 {
-    public class UserService:IUserService
+    public class UserService : IUserService
     {
         private readonly IUserRepository _userRepository;
+
         public UserService(IUserRepository userRepository)
         {
             _userRepository = userRepository;
@@ -20,27 +21,89 @@ namespace Assignment5.Application.Services
 
         public async Task<User> AddUser(User user)
         {
+            if (user == null)
+            {
+                throw new ArgumentNullException("User data cannot be null");
+            }
+            var existingUser = await _userRepository.GetAllUsers();
+            if (existingUser.Any(u => u.libraryCardNumber.Equals(user.libraryCardNumber, StringComparison.OrdinalIgnoreCase)))
+            {
+                throw new InvalidOperationException($"User with library card number {user.libraryCardNumber} already exists.");
+            }
             return await _userRepository.AddUser(user);
         }
 
         public async Task<IEnumerable<User>> GetAllUsers(paginationDto pagination)
         {
-            return await _userRepository.GetAllUsers(pagination);
+            if (pagination.pageNumber <= 0 || pagination.pageSize <= 0)
+            {
+                throw new ArgumentException("Page number and page size must be greater than zero.");
+            }
+
+            var skipNumber = (pagination.pageNumber - 1) * pagination.pageSize;
+            var users = await _userRepository.GetAllUsers();
+            return users.Skip(skipNumber).Take(pagination.pageSize);
+        }
+
+        public async Task<IEnumerable<User>> GetAllUsersNoPages()
+        {
+            var users = await _userRepository.GetAllUsers();
+            return users;
         }
 
         public async Task<User> GetUserById(int userId)
         {
+            if (userId <= 0)
+            {
+                throw new ArgumentException("User ID must be greater than zero.");
+            }
+
+            var existingUser = _userRepository.GetUserById(userId);
+            if (existingUser == null)
+            {
+                throw new ArgumentException("User ID not found.");
+            }
             return await _userRepository.GetUserById(userId);
         }
 
         public async Task<bool> UpdateUser(int userId, User user)
         {
-            return await _userRepository.UpdateUser(userId, user);
+            if (user == null)
+            {
+                throw new ArgumentNullException("User cannot be null.");
+            }
+
+            if (userId <= 0)
+            {
+                throw new ArgumentException("User ID must be greater than zero.");
+            }
+
+            var existingUser = await _userRepository.GetUserById(userId);
+            if (existingUser == null)
+            {
+                throw new ArgumentException("User ID not found.");
+            }
+
+            user.userId = userId;
+
+            return await _userRepository.UpdateUser(user);
         }
 
         public async Task<bool> DeleteUser(int userId)
         {
+            if (userId <= 0)
+            {
+                throw new ArgumentException("User ID must be greater than zero.");
+            }
+
+            var existingUser = await _userRepository.GetUserById(userId);
+            if (existingUser == null)
+            {
+                throw new ArgumentException("User ID not found.");
+            }
+
             return await _userRepository.DeleteUser(userId);
         }
     }
+
 }

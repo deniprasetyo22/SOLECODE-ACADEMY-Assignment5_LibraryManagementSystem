@@ -11,42 +11,265 @@ using System.Threading.Tasks;
 
 namespace Assignment5.Application.Services
 {
-    public class BookService:IBookService
+    public class BookService : IBookService
     {
         private readonly IBookRepository _bookRepository;
+
         public BookService(IBookRepository bookRepository)
         {
-            _bookRepository = bookRepository; 
+            _bookRepository = bookRepository;
         }
 
         public async Task<Book> AddBook(Book book)
         {
+            if (book == null)
+            {
+                throw new ArgumentNullException("Book data cannot be null.");
+            }
+
+            var existingBooks = await _bookRepository.GetAllBooks();
+            if (existingBooks.Any(b => b.ISBN.Equals(book.ISBN, StringComparison.OrdinalIgnoreCase) ||
+                b.title.Equals(book.title, StringComparison.OrdinalIgnoreCase)))
+            {
+                throw new InvalidOperationException("A book with the same ISBN or Title already exists.");
+            }
+
             return await _bookRepository.AddBook(book);
         }
 
         public async Task<IEnumerable<ShowBookDto>> GetAllBooks(paginationDto pagination)
         {
-            return await _bookRepository.GetAllBooks(pagination);
+            if (pagination.pageNumber <= 0 || pagination.pageSize <= 0)
+            {
+                throw new ArgumentException("Page number and page size must be greater than zero.");
+            }
+
+            var books = await _bookRepository.GetAllBooks();
+            if (books == null || !books.Any())
+            {
+                throw new InvalidOperationException("No books found.");
+            }
+
+            return books.Select(b => new ShowBookDto
+            {
+                Id = b.bookId,
+                category = b.category,
+                title = b.title,
+                ISBN = b.ISBN,
+                author = b.author,
+                publisher = b.publisher,
+                description = b.description,
+                location = b.location,
+                totalBook = b.totalBook,
+                language = b.language,
+            })
+            .Skip((pagination.pageNumber - 1) * pagination.pageSize)
+            .Take(pagination.pageSize)
+            .OrderBy(b => b.title)
+            .ToList();
+        }
+
+        public async Task<IEnumerable<Book>> GetAllBooksNoPages()
+        {
+            var books = await _bookRepository.GetAllBooks();
+            if (books == null || !books.Any())
+            {
+                return Enumerable.Empty<Book>();
+            }
+
+            return books;
         }
 
         public async Task<ShowBookDto> GetBookById(int bookId)
         {
-            return await _bookRepository.GetBookById(bookId);
+            if (bookId <= 0)
+            {
+                throw new ArgumentException("Book ID must be greater than zero.");
+            }
+
+            var book = await _bookRepository.GetBookById(bookId);
+            if (book == null)
+            {
+                throw new KeyNotFoundException($"Book with ID {bookId} was not found.");
+            }
+
+            return new ShowBookDto
+            {
+                Id = book.bookId,
+                category = book.category,
+                title = book.title,
+                ISBN = book.ISBN,
+                author = book.author,
+                publisher = book.publisher,
+                description = book.description,
+                location = book.location,
+                price = book.price,
+                totalBook = book.totalBook,
+                language = book.language,
+            };
         }
 
         public async Task<bool> UpdateBook(int bookId, Book book)
         {
-            return await _bookRepository.UpdateBook(bookId, book);
+            if (book == null)
+            {
+                throw new ArgumentNullException("Book data cannot be null.");
+            }
+
+            if (bookId <= 0)
+            {
+                throw new ArgumentException("Book ID must be greater than zero.");
+            }
+
+            var existingBook = await _bookRepository.GetBookById(bookId);
+            if (existingBook == null)
+            {
+                throw new KeyNotFoundException($"Book with ID {bookId} was not found.");
+            }
+
+            var allBooks = await _bookRepository.GetAllBooks();
+            if (allBooks.Any(b => (b.ISBN.Equals(book.ISBN, StringComparison.OrdinalIgnoreCase) ||
+                b.title.Equals(book.title, StringComparison.OrdinalIgnoreCase)) && b.bookId != bookId))
+            {
+                throw new InvalidOperationException("Duplicate ISBN or Title found.");
+            }
+
+            existingBook.category = book.category;
+            existingBook.title = book.title;
+            existingBook.ISBN = book.ISBN;
+            existingBook.publisher = book.publisher;
+            existingBook.author = book.author;
+            existingBook.description = book.description;
+            existingBook.location = book.location;
+            existingBook.price = book.price;
+            existingBook.totalBook = book.totalBook;
+            existingBook.language = book.language;
+
+            return await _bookRepository.UpdateBook(existingBook);
         }
 
         public async Task<bool> DeleteBook(int bookId, string reason)
         {
-            return await _bookRepository.DeleteBook(bookId, reason);
+            if (bookId <= 0)
+            {
+                throw new ArgumentException("Book ID must be greater than zero.");
+            }
+
+            if (string.IsNullOrEmpty(reason))
+            {
+                throw new ArgumentException("The reason should not be empty.", nameof(reason));
+            }
+
+            var existingBook = await _bookRepository.GetBookById(bookId);
+            if (existingBook == null)
+            {
+                throw new KeyNotFoundException($"Book with ID {bookId} not found.");
+            }
+
+            existingBook.status = "Deleted";
+            existingBook.reason = reason;
+
+            return await _bookRepository.UpdateBook(existingBook);
         }
 
         public async Task<IEnumerable<ShowBookDto>> Search(SearchDto query, paginationDto pagination)
         {
-            return await _bookRepository.Search(query, pagination);
+            if (query == null)
+            {
+                throw new ArgumentException("Search criteria cannot be null.", nameof(query));
+            }
+
+            if (pagination.pageSize <= 0 || pagination.pageNumber <= 0)
+            {
+                throw new ArgumentException("Pagination parameters should be greater than zero.");
+            }
+
+            var allBooks = await _bookRepository.GetAllBooks();
+            if (allBooks == null || !allBooks.Any())
+            {
+                return Enumerable.Empty<ShowBookDto>();
+            }
+
+            IEnumerable<Book> filteredBooks = allBooks;
+
+            if (!string.IsNullOrEmpty(query.title))
+            {
+                filteredBooks = filteredBooks.Where(b => b.title != null && b.title.ToLower().Contains(query.title.ToLower()));
+            }
+
+            if (!string.IsNullOrEmpty(query.author))
+            {
+                filteredBooks = filteredBooks.Where(b => b.author != null && b.author.ToLower().Contains(query.author.ToLower()));
+            }
+
+            if (!string.IsNullOrEmpty(query.ISBN))
+            {
+                filteredBooks = filteredBooks.Where(b => b.ISBN != null && b.ISBN.ToLower().Contains(query.ISBN.ToLower()));
+            }
+
+            if (!string.IsNullOrEmpty(query.category))
+            {
+                filteredBooks = filteredBooks.Where(b => b.category != null && b.category.ToLower().Contains(query.category.ToLower()));
+            }
+
+            if (!string.IsNullOrEmpty(query.language))
+            {
+                filteredBooks = filteredBooks.Where(b => b.language != null && b.language.ToLower().Contains(query.language.ToLower()));
+            }
+
+            if (!string.IsNullOrEmpty(query.logicOperator) && query.logicOperator.Equals("OR", StringComparison.OrdinalIgnoreCase))
+            {
+                var orFilteredBooks = allBooks.AsEnumerable();
+
+                if (!string.IsNullOrEmpty(query.title))
+                {
+                    orFilteredBooks = orFilteredBooks.Where(b => b.title != null && b.title.ToLower().Contains(query.title.ToLower()));
+                }
+
+                if (!string.IsNullOrEmpty(query.author))
+                {
+                    orFilteredBooks = orFilteredBooks.Where(b => b.author != null && b.author.ToLower().Contains(query.author.ToLower()));
+                }
+
+                if (!string.IsNullOrEmpty(query.ISBN))
+                {
+                    orFilteredBooks = orFilteredBooks.Where(b => b.ISBN != null && b.ISBN.ToLower().Contains(query.ISBN.ToLower()));
+                }
+
+                if (!string.IsNullOrEmpty(query.category))
+                {
+                    orFilteredBooks = orFilteredBooks.Where(b => b.category != null && b.category.ToLower().Contains(query.category.ToLower()));
+                }
+
+                if (!string.IsNullOrEmpty(query.language))
+                {
+                    orFilteredBooks = orFilteredBooks.Where(b => b.language != null && b.language.ToLower().Contains(query.language.ToLower()));
+                }
+
+                filteredBooks = orFilteredBooks;
+            }
+
+            var skipNumber = (pagination.pageNumber - 1) * pagination.pageSize;
+            return filteredBooks
+                .Skip(skipNumber)
+                .Take(pagination.pageSize)
+                .Select(b => new ShowBookDto
+                {
+                    Id = b.bookId,
+                    category = b.category,
+                    title = b.title,
+                    ISBN = b.ISBN,
+                    author = b.author,
+                    publisher = b.publisher,
+                    description = b.description,
+                    location = b.location,
+                    totalBook = b.totalBook,
+                    language = b.language
+                })
+                .OrderBy(b => b.title)
+                .ToList();
         }
     }
+
+
 }

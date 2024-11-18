@@ -12,6 +12,7 @@ namespace Assignment5.Application.Interfaces.IService
     {
         Task<Book> AddBook(Book book);
         Task<IEnumerable<ShowBookDto>> GetAllBooks(paginationDto pagination);
+        Task<IEnumerable<Book>> GetAllBooksNoPages();
         Task<ShowBookDto> GetBookById(int bookId);
         Task<bool> UpdateBook(int bookId, Book book);
         Task<bool> DeleteBook(int bookId, string reason);
