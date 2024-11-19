@@ -182,14 +182,29 @@ namespace Assignment5.WebAPI.Controllers
         /// <param name="query">Search criteria including title, author, ISBN, and category. These parameters are optional.</param>
         /// <param name="pagination">Pagination details including page number and page size.</param>
         /// <returns>A list of books that match the search criteria.</returns>
+        //[HttpGet("search")]
+        //[MapToApiVersion("1.0")]
+        //public async Task<IActionResult> Search([FromQuery] SearchDto query, [FromQuery] paginationDto pagination)
+        //{
+        //    try
+        //    {
+        //        var searchResults = await _bookService.Search(query, pagination);
+        //        return Ok(searchResults);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return BadRequest($"Error: {ex.Message}");
+        //    }
+        //}
+
+
         [HttpGet("search")]
-        [MapToApiVersion("1.0")]
-        public async Task<IActionResult> Search([FromQuery] SearchDto query, [FromQuery] paginationDto pagination)
+        public async Task<IActionResult> SearchBooks([FromQuery] QueryObject query)
         {
             try
             {
-                var searchResults = await _bookService.Search(query, pagination);
-                return Ok(searchResults);
+                var result = await _bookService.SearchBooksAsync(query);
+                return Ok(result);
             }
             catch (Exception ex)
             {

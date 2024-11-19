@@ -52,7 +52,7 @@ namespace Assignment5.Application.Services
 
             return books.Select(b => new ShowBookDto
             {
-                Id = b.bookId,
+                bookId = b.bookId,
                 category = b.category,
                 title = b.title,
                 ISBN = b.ISBN,
@@ -95,7 +95,7 @@ namespace Assignment5.Application.Services
 
             return new ShowBookDto
             {
-                Id = book.bookId,
+                bookId = book.bookId,
                 category = book.category,
                 title = book.title,
                 ISBN = book.ISBN,
@@ -127,11 +127,20 @@ namespace Assignment5.Application.Services
                 throw new KeyNotFoundException($"Book with ID {bookId} was not found.");
             }
 
+            bool isTitleChanged = !existingBook.title.Equals(book.title, StringComparison.OrdinalIgnoreCase);
+            bool isISBNChanged = !existingBook.ISBN.Equals(book.ISBN, StringComparison.OrdinalIgnoreCase);
+
             var allBooks = await _bookRepository.GetAllBooks();
-            if (allBooks.Any(b => (b.ISBN.Equals(book.ISBN, StringComparison.OrdinalIgnoreCase) ||
-                b.title.Equals(book.title, StringComparison.OrdinalIgnoreCase)) && b.bookId != bookId))
+
+            if (isTitleChanged || isISBNChanged)
             {
-                throw new InvalidOperationException("Duplicate ISBN or Title found.");
+                if (allBooks.Any(b =>
+                    (isISBNChanged && b.ISBN.Equals(book.ISBN, StringComparison.OrdinalIgnoreCase)) ||
+                    (isTitleChanged && b.title.Equals(book.title, StringComparison.OrdinalIgnoreCase)) &&
+                    b.bookId != bookId))
+                {
+                    throw new InvalidOperationException("Duplicate ISBN or Title found.");
+                }
             }
 
             existingBook.category = book.category;
@@ -147,6 +156,7 @@ namespace Assignment5.Application.Services
 
             return await _bookRepository.UpdateBook(existingBook);
         }
+
 
         public async Task<bool> DeleteBook(int bookId, string reason)
         {
@@ -255,7 +265,7 @@ namespace Assignment5.Application.Services
                 .Take(pagination.pageSize)
                 .Select(b => new ShowBookDto
                 {
-                    Id = b.bookId,
+                    bookId = b.bookId,
                     category = b.category,
                     title = b.title,
                     ISBN = b.ISBN,
@@ -269,7 +279,13 @@ namespace Assignment5.Application.Services
                 .OrderBy(b => b.title)
                 .ToList();
         }
+
+
+        public async Task<object> SearchBooksAsync(QueryObject query)
+        {
+            var result = await _bookRepository.SearchBooksAsync(query);
+            return result;
+        }
+
     }
-
-
 }

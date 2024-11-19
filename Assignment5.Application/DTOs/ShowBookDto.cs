@@ -8,7 +8,7 @@ namespace Assignment5.Application.DTOs
 {
     public class ShowBookDto
     {
-        public int Id { get; set; }
+        public int bookId { get; set; }
         public string? category { get; set; }
         public string? title { get; set; }
         public string? ISBN { get; set; }

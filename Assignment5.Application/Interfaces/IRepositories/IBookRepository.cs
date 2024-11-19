@@ -15,5 +15,6 @@ namespace Assignment5.Application.Interfaces.IRepositories
         Task<Book> GetBookById(int bookId);
         Task<bool> UpdateBook(Book book);
         Task<bool> DeleteBook(Book book);
+        Task<object> SearchBooksAsync(QueryObject query);
     }
 }
