@@ -67,7 +67,7 @@ namespace Assignment5.WebAPI.Controllers
 
         [HttpGet("{userId}")]
         [MapToApiVersion("1.0")]
-        public async Task<ActionResult<User>> GetUserById(int userId)
+        public async Task<IActionResult> GetUserById(int userId)
         {
             try
             {

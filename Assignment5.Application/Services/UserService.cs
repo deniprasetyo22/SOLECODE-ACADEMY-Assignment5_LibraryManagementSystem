@@ -58,7 +58,7 @@ namespace Assignment5.Application.Services
                 throw new ArgumentException("User ID must be greater than zero.");
             }
 
-            var existingUser = _userRepository.GetUserById(userId);
+            var existingUser = await _userRepository.GetUserById(userId);
             if (existingUser == null)
             {
                 throw new ArgumentException("User ID not found.");
@@ -84,9 +84,14 @@ namespace Assignment5.Application.Services
                 throw new ArgumentException("User ID not found.");
             }
 
-            user.userId = userId;
+            existingUser.firstName = user.firstName;
+            existingUser.lastName = user.lastName;
+            existingUser.position = user.position;
+            existingUser.libraryCardNumber = user.libraryCardNumber;
+            existingUser.privilage = user.privilage;
+            existingUser.notes = user.notes;
 
-            return await _userRepository.UpdateUser(user);
+            return await _userRepository.UpdateUser(existingUser);
         }
 
         public async Task<bool> DeleteUser(int userId)
