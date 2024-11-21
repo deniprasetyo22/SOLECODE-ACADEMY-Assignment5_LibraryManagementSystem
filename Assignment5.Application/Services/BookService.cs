@@ -283,8 +283,76 @@ namespace Assignment5.Application.Services
 
         public async Task<object> SearchBooksAsync(QueryObject query)
         {
-            var result = await _bookRepository.SearchBooksAsync(query);
-            return result;
+            var allBooks = await _bookRepository.GetAllBooks();
+            var temp = allBooks.AsQueryable();
+
+            if (!string.IsNullOrEmpty(query.Keyword))
+            {
+                string keywordLower = query.Keyword.ToLower();
+                temp = temp.Where(b => b.title.ToLower().Contains(keywordLower) ||
+                                       b.author.ToLower().Contains(keywordLower) ||
+                                       b.ISBN.ToLower().Contains(keywordLower));
+            }
+
+            if (!string.IsNullOrEmpty(query.Title))
+                temp = temp.Where(b => b.title.ToLower().Contains(query.Title.ToLower()));
+
+            if (!string.IsNullOrEmpty(query.Author))
+                temp = temp.Where(b => b.author.ToLower().Contains(query.Author.ToLower()));
+
+            if (!string.IsNullOrEmpty(query.ISBN))
+                temp = temp.Where(b => b.ISBN.ToLower().Contains(query.ISBN.ToLower()));
+
+            var total = temp.Count();
+
+            if (!string.IsNullOrWhiteSpace(query.SortBy))
+            {
+                switch (query.SortBy.ToLower())
+                {
+                    case "title":
+                        temp = query.SortOrder.Equals("asc", StringComparison.OrdinalIgnoreCase)
+                            ? temp.OrderBy(s => s.title)
+                            : temp.OrderByDescending(s => s.title);
+                        break;
+                    case "author":
+                        temp = query.SortOrder.Equals("asc", StringComparison.OrdinalIgnoreCase)
+                            ? temp.OrderBy(s => s.author)
+                            : temp.OrderByDescending(s => s.author);
+                        break;
+                    case "isbn":
+                        temp = query.SortOrder.Equals("asc", StringComparison.OrdinalIgnoreCase)
+                            ? temp.OrderBy(s => s.ISBN)
+                            : temp.OrderByDescending(s => s.ISBN);
+                        break;
+                    default:
+                        temp = query.SortOrder.Equals("asc")
+                            ? temp.OrderBy(s => s.bookId)
+                            : temp.OrderByDescending(s => s.bookId);
+                        break;
+                }
+            }
+
+            var skipNumber = (query.PageNumber - 1) * query.PageSize;
+
+            var list = temp.Skip(skipNumber).Take(query.PageSize).ToList();
+
+            return new { total = total, data = list };
+        }
+
+        public async Task<bool> RemoveBook(int bookId)
+        {
+            if(bookId <= 0)
+            {
+                throw new ArgumentException("Book ID must be grether than zero");
+            }
+
+            var existingBook = await _bookRepository.GetBookById(bookId);
+            if(existingBook == null)
+            {
+                throw new ArgumentException("Book ID not found.");
+            }
+
+            return await _bookRepository.DeleteBook(bookId);
         }
 
     }

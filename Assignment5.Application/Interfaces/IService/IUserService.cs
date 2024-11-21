@@ -11,7 +11,7 @@ namespace Assignment5.Application.Interfaces.IService
     public interface IUserService
     {
         Task<User> AddUser(User user);
-        Task<IEnumerable<User>> GetAllUsers(paginationDto pagination);
+        Task<object> GetAllUsers(paginationDto pagination);
         Task<IEnumerable<User>> GetAllUsersNoPages();
         Task<User> GetUserById(int userId);
         Task<bool> UpdateUser(int userId, User user);

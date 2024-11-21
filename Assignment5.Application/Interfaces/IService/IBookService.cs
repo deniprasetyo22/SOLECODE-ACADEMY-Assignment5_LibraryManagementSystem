@@ -18,5 +18,6 @@ namespace Assignment5.Application.Interfaces.IService
         Task<bool> DeleteBook(int bookId, string reason);
         Task<IEnumerable<ShowBookDto>> Search(SearchDto query, paginationDto pagination);
         Task<object> SearchBooksAsync(QueryObject query);
+        Task<bool> RemoveBook(int bookId);
     }
 }

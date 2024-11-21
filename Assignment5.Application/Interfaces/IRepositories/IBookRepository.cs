@@ -14,7 +14,6 @@ namespace Assignment5.Application.Interfaces.IRepositories
         Task<IEnumerable<Book>> GetAllBooks();
         Task<Book> GetBookById(int bookId);
         Task<bool> UpdateBook(Book book);
-        Task<bool> DeleteBook(Book book);
-        Task<object> SearchBooksAsync(QueryObject query);
+        Task<bool> DeleteBook(int bookId);
     }
 }

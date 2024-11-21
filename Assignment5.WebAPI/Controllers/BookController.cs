@@ -152,18 +152,42 @@ namespace Assignment5.WebAPI.Controllers
         /// <param name="bookId">The ID of the book to be deleted.</param>
         /// <param name="reason">The reason for deletion.</param>
         /// <returns>Result of the delete operation.</returns>
-        [HttpDelete("{bookId:int}")]
-        [MapToApiVersion("1.0")]
-        public async Task<IActionResult> DeleteBook(int bookId, [FromBody] string reason)
-        {
-            if (string.IsNullOrEmpty(reason))
-            {
-                return BadRequest("The reason should not be empty.");
-            }
+        //[HttpDelete("{bookId:int}")]
+        //[MapToApiVersion("1.0")]
+        //public async Task<IActionResult> DeleteBook(int bookId, [FromBody] string reason)
+        //{
+        //    if (string.IsNullOrEmpty(reason))
+        //    {
+        //        return BadRequest("The reason should not be empty.");
+        //    }
 
+        //    try
+        //    {
+        //        var success = await _bookService.DeleteBook(bookId, reason);
+        //        if (!success)
+        //        {
+        //            return NotFound("Book not found.");
+        //        }
+        //        return Ok("Book deleted successfully.");
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return BadRequest($"Error: {ex.Message}");
+        //    }
+        //}
+
+        /// <summary>
+        /// Deletes a book by its ID.
+        /// </summary>
+        /// <param name="bookId">The ID of the book to be deleted.</param>
+        /// <returns>Result of the delete operation.</returns>
+        [HttpDelete("{bookId}")]
+        [MapToApiVersion("1.0")]
+        public async Task<IActionResult> RemopveBook(int bookId)
+        {
             try
             {
-                var success = await _bookService.DeleteBook(bookId, reason);
+                var success = await _bookService.RemoveBook(bookId);
                 if (!success)
                 {
                     return NotFound("Book not found.");
@@ -175,6 +199,7 @@ namespace Assignment5.WebAPI.Controllers
                 return BadRequest($"Error: {ex.Message}");
             }
         }
+
 
         /// <summary>
         /// Searches for books based on the provided search criteria and pagination.

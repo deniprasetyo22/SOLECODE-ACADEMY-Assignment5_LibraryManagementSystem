@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace Assignment5.Application.Services
 {
@@ -33,16 +34,21 @@ namespace Assignment5.Application.Services
             return await _userRepository.AddUser(user);
         }
 
-        public async Task<IEnumerable<User>> GetAllUsers(paginationDto pagination)
+        public async Task<object> GetAllUsers(paginationDto pagination)
         {
             if (pagination.pageNumber <= 0 || pagination.pageSize <= 0)
             {
                 throw new ArgumentException("Page number and page size must be greater than zero.");
             }
 
-            var skipNumber = (pagination.pageNumber - 1) * pagination.pageSize;
             var users = await _userRepository.GetAllUsers();
-            return users.Skip(skipNumber).Take(pagination.pageSize);
+            var temp = users.AsQueryable();
+            var total = temp.Count();
+
+            var skipNumber = (pagination.pageNumber - 1) * pagination.pageSize;
+            var usersList =  temp.Skip(skipNumber).Take(pagination.pageSize).ToList();
+
+            return new { total = total, data = usersList };
         }
 
         public async Task<IEnumerable<User>> GetAllUsersNoPages()
