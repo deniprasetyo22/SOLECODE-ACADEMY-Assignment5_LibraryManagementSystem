@@ -34,21 +34,80 @@ namespace Assignment5.Application.Services
             return await _userRepository.AddUser(user);
         }
 
-        public async Task<object> GetAllUsers(paginationDto pagination)
+        public async Task<object> GetAllUsers(QueryObjectMember query)
         {
-            if (pagination.pageNumber <= 0 || pagination.pageSize <= 0)
+            var allusers = await _userRepository.GetAllUsers();
+            var temp = allusers.AsQueryable();
+
+            if (!string.IsNullOrEmpty(query.Keyword))
             {
-                throw new ArgumentException("Page number and page size must be greater than zero.");
+                string keywordLower = query.Keyword.ToLower();
+                temp = temp.Where(b => b.firstName.ToLower().Contains(keywordLower) ||
+                                       b.lastName.ToLower().Contains(keywordLower) ||
+                                       b.position.ToLower().Contains(keywordLower) ||
+                                       b.libraryCardNumber.ToLower().Contains(keywordLower) ||
+                                       b.userId.ToString().Contains(query.Keyword));
             }
 
-            var users = await _userRepository.GetAllUsers();
-            var temp = users.AsQueryable();
+            if (query.UserId.HasValue)
+                temp = temp.Where(b => b.userId == query.UserId.Value);
+
+            if (!string.IsNullOrEmpty(query.FirstName))
+                temp = temp.Where(b => b.firstName.ToLower().Contains(query.FirstName.ToLower()));
+
+            if (!string.IsNullOrEmpty(query.LastName))
+                temp = temp.Where(b => b.lastName.ToLower().Contains(query.LastName.ToLower()));
+
+            if (!string.IsNullOrEmpty(query.FullName))
+            {
+                temp = temp.Where(b => (b.firstName + " " + b.lastName).ToLower().Contains(query.FullName.ToLower()));
+            }
+
+            if (!string.IsNullOrEmpty(query.Position))
+                temp = temp.Where(b => b.position.ToLower().Contains(query.Position.ToLower()));
+
+            if (!string.IsNullOrEmpty(query.LibraryCardNumber))
+                temp = temp.Where(b => b.libraryCardNumber.ToLower().Contains(query.LibraryCardNumber.ToLower()));
+
             var total = temp.Count();
 
-            var skipNumber = (pagination.pageNumber - 1) * pagination.pageSize;
-            var usersList =  temp.Skip(skipNumber).Take(pagination.pageSize).ToList();
+            if (!string.IsNullOrWhiteSpace(query.SortBy))
+            {
+                switch (query.SortBy.ToLower())
+                {
+                    case "firstname":
+                        temp = query.SortOrder.Equals("asc", StringComparison.OrdinalIgnoreCase)
+                            ? temp.OrderBy(s => s.firstName)
+                            : temp.OrderByDescending(s => s.firstName);
+                        break;
+                    case "lastname":
+                        temp = query.SortOrder.Equals("asc", StringComparison.OrdinalIgnoreCase)
+                            ? temp.OrderBy(s => s.lastName)
+                            : temp.OrderByDescending(s => s.lastName);
+                        break;
+                    case "position":
+                        temp = query.SortOrder.Equals("asc", StringComparison.OrdinalIgnoreCase)
+                            ? temp.OrderBy(s => s.position)
+                            : temp.OrderByDescending(s => s.position);
+                        break;
+                    case "librarycardnumber":
+                        temp = query.SortOrder.Equals("asc", StringComparison.OrdinalIgnoreCase)
+                            ? temp.OrderBy(s => s.libraryCardNumber)
+                            : temp.OrderByDescending(s => s.libraryCardNumber);
+                        break;
+                    default:
+                        temp = query.SortOrder.Equals("asc")
+                            ? temp.OrderBy(s => s.userId)
+                            : temp.OrderByDescending(s => s.userId);
+                        break;
+                }
+            }
 
-            return new { total = total, data = usersList };
+            var skipNumber = (query.PageNumber - 1) * query.PageSize;
+
+            var userList = temp.Skip(skipNumber).Take(query.PageSize).ToList();
+
+            return new { total = total, data = userList };
         }
 
         public async Task<IEnumerable<User>> GetAllUsersNoPages()

@@ -37,11 +37,11 @@ namespace Assignment5.WebAPI.Controllers
 
         [HttpGet]
         [MapToApiVersion("1.0")]
-        public async Task<ActionResult<IEnumerable<User>>> GetAllUsers([FromQuery] paginationDto pagination)
+        public async Task<ActionResult<IEnumerable<User>>> GetAllUsers([FromQuery] QueryObjectMember query)
         {
             try
             {
-                var users = await _userService.GetAllUsers(pagination);
+                var users = await _userService.GetAllUsers(query);
                 return Ok(users);
             }
             catch (Exception ex)
