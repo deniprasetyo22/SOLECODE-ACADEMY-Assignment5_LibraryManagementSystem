@@ -291,8 +291,12 @@ namespace Assignment5.Application.Services
                 string keywordLower = query.Keyword.ToLower();
                 temp = temp.Where(b => b.title.ToLower().Contains(keywordLower) ||
                                        b.author.ToLower().Contains(keywordLower) ||
-                                       b.ISBN.ToLower().Contains(keywordLower));
+                                       b.ISBN.ToLower().Contains(keywordLower) ||
+                                       b.bookId.ToString().Contains(query.Keyword));
             }
+
+            if (query.BookId.HasValue)
+                temp = temp.Where(b => b.bookId == query.BookId.Value);
 
             if (!string.IsNullOrEmpty(query.Title))
                 temp = temp.Where(b => b.title.ToLower().Contains(query.Title.ToLower()));

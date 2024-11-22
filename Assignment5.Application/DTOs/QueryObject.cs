@@ -8,6 +8,7 @@ namespace Assignment5.Application.DTOs
 {
     public class QueryObject
     {
+        public int? BookId { get; set; } = null;
         public string? Title { get; set; } = null;
         public string? Author { get; set; } = null;
         public string? ISBN { get; set; } = null;
